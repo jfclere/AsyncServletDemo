@@ -34,8 +34,10 @@ public class Servlet extends HttpServlet implements AsyncListener {
         } else if (req.isAsyncSupported()) {
             AsyncContext actx = req.startAsync();
             actx.addListener(this);
+            actx.setTimeout(5000);
             resp.setContentType("text/plain");
 
+            System.out.println("OutputStream: " + resp.getOutputStream());
             DemoReader listener = new DemoReader(
                 actx, req.getInputStream(), resp.getOutputStream());
 
@@ -52,11 +54,17 @@ public class Servlet extends HttpServlet implements AsyncListener {
 
     @Override
     public void onError(AsyncEvent event) throws IOException {
-        System.out.println("onError");
+        event.getSuppliedResponse().getOutputStream().println("onError");
+        event.getSuppliedResponse().getOutputStream().flush();
+        System.out.println("onError: " + event);
     }
 
     @Override
     public void onTimeout(AsyncEvent event) throws IOException {
+        System.out.println("onTimeout OutputStream: " + event.getSuppliedResponse().getOutputStream());
+        event.getSuppliedResponse().getOutputStream().write("onTimeout".getBytes());
+        event.getSuppliedResponse().getOutputStream().print('\n');    
+        event.getSuppliedResponse().getOutputStream().flush();
         System.out.println("onTimeout");
     }
 
@@ -87,13 +95,18 @@ public class Servlet extends HttpServlet implements AsyncListener {
             while (sis.isReady() && read > -1) {
                 read = sis.read(buffer);
                 /* echo stuff back */
-                sos.write(buffer);
-                sos.flush();
-                System.out.println("onDataAvailable: read " + read);
+                if (read > -1) {
+                  sos.write(buffer, 0, read);
+                  sos.flush();
+                  System.out.println("onDataAvailable: read " + read + " :  " + new String(buffer, "UTF-8"));
+                } else {
+                  System.out.println("onDataAvailable: read " + read);
+                }
             }
         }
         @Override
         public void onError(Throwable throwable) {
+            System.out.println("onError: " + throwable);
             ac.complete();
         }
 
