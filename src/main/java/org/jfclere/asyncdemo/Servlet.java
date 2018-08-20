@@ -29,6 +29,7 @@ public class Servlet extends HttpServlet implements AsyncListener {
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp)
            throws ServletException, IOException {
+        System.out.println("sessionid: " + req.getRequestedSessionId());
         if (req.isAsyncStarted()) {
             req.getAsyncContext().complete();
         } else if (req.isAsyncSupported()) {
@@ -62,6 +63,8 @@ public class Servlet extends HttpServlet implements AsyncListener {
     @Override
     public void onTimeout(AsyncEvent event) throws IOException {
         System.out.println("onTimeout OutputStream: " + event.getSuppliedResponse().getOutputStream());
+        HttpServletRequest req = (HttpServletRequest) event.getSuppliedRequest();
+        System.out.println("onTimeout sessionid: " + req.getRequestedSessionId());
         event.getSuppliedResponse().getOutputStream().write("onTimeout".getBytes());
         event.getSuppliedResponse().getOutputStream().print('\n');    
         event.getSuppliedResponse().getOutputStream().flush();
